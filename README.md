@@ -1,7 +1,6 @@
 # Credit Risk Modeling for Corporate Default Prediction
 
-**Team Lavender** | NYU ML in Finance  
-Mustafa Poonawala · Yash Jadhav
+**NYU ML in Finance**
 
 > A two-stage, finance-aware credit risk pipeline: XGBoost discriminator + Isotonic Regression calibrator, validated with temporal walk-forward cross-validation on ~1M Italian corporate firm-years.
 
@@ -141,22 +140,33 @@ All 12 features are winsorized financial ratios grounded in the Altman (1968) / 
 
 ### Key insights the model learned
 
-1. **Cash flow dominates accounting profit.** `cfroa_w` and `cf_to_debt_std` outrank `roa_w` — a firm can report profits while burning cash and still default.
-2. **Debt structure matters as much as leverage.** `debt_maturity_ratio_w` captures refinancing risk: heavy short-term debt is dangerous even at moderate total leverage.
-3. **Altman Z still works.** The 1968 composite remains a top predictor, confirming that working capital, retained earnings, and EBIT jointly capture distress.
+1. **Collateral quality is the strongest signal.** `tangible_asset_ratio_w` is the top feature by SHAP importance — firms with few tangible assets have no collateral buffer and face sharply higher PD. Asset quality outranks even cash flow in predictive power.
+2. **Cash flow dominates accounting profit.** `cfroa_w` (SHAP rank #2) and `cf_to_debt_std` (rank #4) together outrank `roa_w` (rank #8) — a firm can report accounting profits while burning cash and still default.
+3. **Debt structure matters as much as leverage.** `debt_maturity_ratio_w` captures refinancing risk: heavy reliance on short-term debt is dangerous even at moderate total leverage.
+4. **Altman Z still works.** The 1968 composite (rank #6) remains a strong predictor, confirming that working capital, retained earnings, and EBIT jointly capture distress.
 
 ### Partial dependence plots
 
-The PDP plots confirm economically expected relationships — higher leverage raises PD, stronger cash flow reduces it — validating that the model learned structural financial behaviour, not spurious correlations.
+Each plot shows how predicted PD changes as one feature varies, holding all others constant.
 
 | | |
 |---|---|
 | ![PDP CF/Debt](artifacts/interpretation/pdp_cf_to_debt_std.png) | ![PDP CFROA](artifacts/interpretation/pdp_cfroa_w.png) |
+| **cf_to_debt_std:** Clear monotonic decrease — firms with negative cash flow relative to debt (left) have PD ~0.39; as debt-service capacity improves, PD falls to ~0.25. The relationship is nearly linear through the core of the distribution. | **cfroa_w:** Non-linear U-shape — highly loss-making firms (CFROA ≈ −5) have PD ~0.49, which falls sharply as cash returns improve. However, PD rises again at very high CFROA values (>8), likely reflecting extreme outliers in the tail of the distribution. |
 | ![PDP ROA](artifacts/interpretation/pdp_roa_w.png) | ![PDP Tangible](artifacts/interpretation/pdp_tangible_asset_ratio_w.png) |
+| **roa_w:** Similar non-linear shape — negative ROA drives PD to ~0.43, which drops to ~0.29 as profitability improves to around 4–5%. PD rises modestly at very high ROA values, mirroring the cfroa_w pattern. The sharp inflection near zero is the most economically meaningful part. | **tangible_asset_ratio_w:** The clearest and most monotonic relationship of the four — PD drops steadily from ~0.48 (zero tangible assets, no collateral) to ~0.19 (90% tangible assets). Consistent with the SHAP ranking: this is the single most important feature in the model. |
 
-SHAP summary:
+These shapes confirm the model learned structural financial behaviour — not spurious correlations. The non-linearities in cfroa_w and roa_w at the extremes reflect genuine tail risk patterns that logistic regression would miss entirely.
+
+### SHAP feature importance
 
 ![SHAP summary bar](artifacts/interpretation/shap_summary_bar.png)
+
+`tangible_asset_ratio_w` and `cfroa_w` are the two dominant features. `leverage_w`, `cf_to_debt_std`, `fin_debt_ratio_w`, and `altman_z` form a second tier of roughly equal importance. `ebitda_margin_w` contributes the least — the model found that cash-flow based measures capture profitability more reliably than margin ratios alone.
+
+![SHAP beeswarm](artifacts/interpretation/shap_summary_beeswarm.png)
+
+The beeswarm confirms directionality: high `tangible_asset_ratio_w` (pink) pushes SHAP negative (lower PD); low values (blue) push positive. The same pattern holds for `cfroa_w` and `cf_to_debt_std`. For `leverage_w`, the direction flips — high leverage (pink) increases PD, as expected.
 
 ---
 
@@ -310,11 +320,3 @@ Our model provides the PD. The bank supplies LGD and EAD from its own records. S
 - IFRS 9: Financial Instruments (2014). International Accounting Standards Board.
 - Basel III: Finalising post-crisis reforms (2017). Bank for International Settlements.
 
----
-
-## Contributors
-
-| Contributor | Responsibilities |
-|---|---|
-| **Mustafa Poonawala** | Problem formulation, EDA & data quality analysis, preprocessing pipeline, XGBoost architecture & hyperparameter tuning, walk-forward validation framework, `default_flag.py`, `estimator.py` (60%), `preprocessing.py` (50%) |
-| **Yash Jadhav** | Two-stage pipeline design, isotonic calibration, bootstrap CI methodology, evaluation & benchmarking, deployment & business case, `predictor.py` (100%), `harness.py` (70%), `estimator.py` (40%), `preprocessing.py` (50%) |
