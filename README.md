@@ -1,4 +1,4 @@
-# Banca Massiccia — 12-Month Probability of Default Model
+# Credit Risk Modeling for Corporate Default Prediction
 
 **Team Lavender** | NYU ML in Finance  
 Mustafa Poonawala · Yash Jadhav
