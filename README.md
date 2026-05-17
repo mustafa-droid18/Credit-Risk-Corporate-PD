@@ -26,10 +26,10 @@ Mustafa Poonawala · Yash Jadhav
 
 | Fold | Train Window | Val Window | n_train | n_val | AUC | 95% CI |
 |---|---|---|---|---|---|---|
-| 2008 | < 2008-05-01 | 2008–2009 | 144,333 | 161,514 | 0.831 | [0.822, 0.841] |
-| 2009 | < 2009-05-01 | 2009–2010 | 305,847 | 170,706 | 0.842 | [0.834, 0.850] |
-| 2010 | < 2010-05-01 | 2010–2011 | 476,553 | 174,837 | 0.833 | [0.826, 0.841] |
-| 2011 | < 2011-05-01 | 2011–2012 | 651,390 | 184,347 | 0.850 | [0.842, 0.858] |
+| 2008 | < 2008-05-01 | 2008–2009 | 144,333 | 161,514 | 0.828 | [0.818, 0.838] |
+| 2009 | < 2009-05-01 | 2009–2010 | 305,847 | 170,706 | 0.838 | [0.830, 0.846] |
+| 2010 | < 2010-05-01 | 2010–2011 | 476,553 | 174,837 | 0.830 | [0.823, 0.838] |
+| 2011 | < 2011-05-01 | 2011–2012 | 651,390 | 184,347 | 0.850 | [0.842, 0.857] |
 
 Baseline logistic regression achieved AUC 0.812 on the same dataset.
 
@@ -136,7 +136,7 @@ SHAP summary:
 - **Unit:** One firm-year row (~1M rows total; 1.09% default rate)
 - **Target construction:** A firm-year is labeled `default_12m = 1` if a default event occurs within 12 months of `avail_date` (= statement date + 4 months, reflecting Italian reporting lag)
 - **Temporal split:** Train on `avail_date < 2012-05-01`; calibration holdout = final 12 months of training window
-- **Missing data:** `missing_roe_flag` and `missing_margin_flag` are included as features — defaulters show dramatically higher missingness (ROE: 44% vs 6.5%; margin_fin: 34% vs 3.5%)
+- **Missing data:** Defaulters show dramatically higher missingness than non-defaulters (ROE missing: 44% vs 6.5%; margin_fin missing: 34% vs 3.5%). Rather than dropping these rows, missing components are set to zero with an economic interpretation of "absent or unreported", and ratios are subsequently winsorized to limit noise.
 
 ---
 
