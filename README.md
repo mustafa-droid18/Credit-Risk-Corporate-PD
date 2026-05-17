@@ -4,12 +4,6 @@
 
 > A two-stage, finance-aware credit risk pipeline: XGBoost discriminator + Isotonic Regression calibrator, validated with temporal walk-forward cross-validation on ~1M Italian corporate firm-years.
 
-![Walk-Forward AUC](https://img.shields.io/badge/Walk--Forward%20AUC-0.837-brightgreen)
-![Calibration AUC](https://img.shields.io/badge/Calibration%20AUC-0.851-brightgreen)
-![Brier Score](https://img.shields.io/badge/Brier%20Score-0.012-blue)
-![Python](https://img.shields.io/badge/Python-3.10-blue)
-![XGBoost](https://img.shields.io/badge/Model-XGBoost-orange)
-
 ---
 
 ## Results
