@@ -3,7 +3,13 @@
 **Team Lavender** | NYU ML in Finance  
 Mustafa Poonawala · Yash Jadhav
 
-> A two-stage, finance-aware credit risk pipeline: XGBoost discriminator + Isotonic Regression calibrator, validated with temporal walk-forward cross-validation.
+> A two-stage, finance-aware credit risk pipeline: XGBoost discriminator + Isotonic Regression calibrator, validated with temporal walk-forward cross-validation on ~1M Italian corporate firm-years.
+
+![Walk-Forward AUC](https://img.shields.io/badge/Walk--Forward%20AUC-0.837-brightgreen)
+![Calibration AUC](https://img.shields.io/badge/Calibration%20AUC-0.851-brightgreen)
+![Brier Score](https://img.shields.io/badge/Brier%20Score-0.012-blue)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![XGBoost](https://img.shields.io/badge/Model-XGBoost-orange)
 
 ---
 
@@ -31,19 +37,34 @@ Mustafa Poonawala · Yash Jadhav
 | 2010 | < 2010-05-01 | 2010–2011 | 476,553 | 174,837 | 0.830 | [0.823, 0.838] |
 | 2011 | < 2011-05-01 | 2011–2012 | 651,390 | 184,347 | 0.850 | [0.842, 0.857] |
 
-Baseline logistic regression achieved AUC 0.812 on the same dataset.
+Baseline logistic regression achieved AUC **0.812** on the same dataset — our calibrated XGBoost model outperforms it by **+3.9 points**.
 
 ---
 
 ## The Business Problem
 
-Banca Massiccia, a large Italian bank, needs reliable 12-month Probability of Default (PD) estimates for corporate borrowers to:
+Banca Massiccia, a large Italian bank, needs reliable 12-month Probability of Default (PD) estimates for corporate borrowers. A simple approve/deny classifier is insufficient — the bank needs a true, usable probability for three reasons:
 
-1. **Financial** — Price credit risk accurately (risk-based pricing via ECL = PD × LGD × EAD)
-2. **Operational** — Replace slow, subjective manual underwriting with automated, consistent scoring
-3. **Regulatory** — Satisfy IFRS 9 requirements for statistically valid, calibrated PDs
+| Problem | Description | Our Solution |
+|---|---|---|
+| **Financial** | Cannot price credit risk without a calibrated PD | Calibrated PD feeds directly into ECL = PD × LGD × EAD |
+| **Operational** | Manual underwriting is slow, subjective, inconsistent | `harness.py` automates end-to-end scoring |
+| **Regulatory** | IFRS 9 mandates statistically valid, calibrated PDs for provisioning | Isotonic calibration ensures PDs match real default rates |
 
-A simple classifier (approve/deny) is insufficient — the bank needs a true, usable probability.
+---
+
+## Why XGBoost over Logistic Regression
+
+| | Logistic Regression | Raw XGBoost | Our Approach |
+|---|---|---|---|
+| Captures non-linearity | No | Yes | Yes |
+| Handles class imbalance | Manually | `scale_pos_weight` | `scale_pos_weight` (~90) |
+| Output is a true probability | Yes | No (uncalibrated) | Yes (isotonic calibration) |
+| Interpretable features | Yes | Partial | Yes (12 finance-grounded ratios) |
+| IFRS 9 / ECL ready | Yes | No | Yes |
+| AUC (this dataset) | 0.812 | — | **0.851** |
+
+Logistic regression is linear — it cannot capture that high leverage is only dangerous when combined with low cash flow. XGBoost captures these interactions natively. We then add calibration to convert raw scores into true, usable probabilities, which raw XGBoost alone cannot provide.
 
 ---
 
@@ -88,6 +109,15 @@ Raw Financial Data
         Calibrated PD
 ```
 
+Each script has a single responsibility:
+
+| Script | Role |
+|---|---|
+| `preprocessing.py` | Defines all feature engineering logic — the only place transformations are written |
+| `estimator.py` | Trains, validates, calibrates, and saves all artifacts |
+| `predictor.py` | Loads artifacts and exposes `predict_pd(df)` |
+| `harness.py` | CLI interface — the only entry point for production scoring |
+
 ---
 
 ## Feature Engineering
@@ -111,13 +141,13 @@ All 12 features are winsorized financial ratios grounded in the Altman (1968) / 
 
 ### Key insights the model learned
 
-1. **Cash flow dominates accounting profit.** `cfroa_w` and `cf_to_debt_std` outrank `roa_w` — a firm can report profits while burning cash and default.
+1. **Cash flow dominates accounting profit.** `cfroa_w` and `cf_to_debt_std` outrank `roa_w` — a firm can report profits while burning cash and still default.
 2. **Debt structure matters as much as leverage.** `debt_maturity_ratio_w` captures refinancing risk: heavy short-term debt is dangerous even at moderate total leverage.
 3. **Altman Z still works.** The 1968 composite remains a top predictor, confirming that working capital, retained earnings, and EBIT jointly capture distress.
 
 ### Partial dependence plots
 
-The PDP plots below confirm economically expected relationships — higher leverage raises PD, stronger cash flow reduces it — validating that the model learned structural financial behaviour, not spurious correlations.
+The PDP plots confirm economically expected relationships — higher leverage raises PD, stronger cash flow reduces it — validating that the model learned structural financial behaviour, not spurious correlations.
 
 | | |
 |---|---|
@@ -134,9 +164,10 @@ SHAP summary:
 
 - **Dataset:** Annual financial statements for Italian non-financial firms with > €1.5M assets
 - **Unit:** One firm-year row (~1M rows total; 1.09% default rate)
-- **Target construction:** A firm-year is labeled `default_12m = 1` if a default event occurs within 12 months of `avail_date` (= statement date + 4 months, reflecting Italian reporting lag)
+- **Target construction:** A firm-year is labeled `default_12m = 1` if a default event occurs within 12 months of `avail_date` (= statement date + 4 months, reflecting the Italian reporting lag of 120–180 days)
 - **Temporal split:** Train on `avail_date < 2012-05-01`; calibration holdout = final 12 months of training window
-- **Missing data:** Defaulters show dramatically higher missingness than non-defaulters (ROE missing: 44% vs 6.5%; margin_fin missing: 34% vs 3.5%). Rather than dropping these rows, missing components are set to zero with an economic interpretation of "absent or unreported", and ratios are subsequently winsorized to limit noise.
+- **Class imbalance:** ~90:1 non-default to default ratio, handled via `scale_pos_weight`
+- **Missing data:** Defaulters show dramatically higher missingness (ROE missing: 44% vs 6.5%; margin_fin missing: 34% vs 3.5%). Missing components are set to zero — economically interpreted as "absent or unreported" — and ratios are winsorized to limit noise
 
 ---
 
@@ -229,14 +260,42 @@ python estimator.py       # train, validate, calibrate, save artifacts
 
 ---
 
-## Scope & Limitations
+## Business Case & ROI
 
-This model is valid only for:
-- Italian non-financial corporations
-- Firms with > €1.5M in assets
-- 12-month default horizon
+Because the model outputs a calibrated PD — not just a ranking — it plugs directly into the bank's core financial formulas.
 
-Do **not** apply to banks/insurers, small businesses, non-Italian firms, or other loan product horizons.
+**1. Loss Avoidance** via Expected Credit Loss:
+```
+ECL = PD × LGD × EAD
+```
+Our model provides the PD. The bank supplies LGD and EAD from its own records. Summing ECL across high-PD loans that a naive model would have approved directly quantifies annual loss avoided.
+
+**2. Risk-Based Pricing** — the calibrated PD enables the bank to move from one-size-fits-all interest rates to borrower-specific pricing:
+- Offer competitive rates to low-PD borrowers to win business
+- Charge a risk premium on medium-PD borrowers to ensure each loan is profitable after expected loss
+
+**3. Operational Efficiency** — `harness.py` automates the entire scoring pipeline, reducing underwriting time per application and freeing analysts for complex, high-value cases.
+
+**4. Early Warning System** — re-scoring the existing portfolio annually flags clients whose PD has jumped significantly (e.g. 1.5% → 4.5%), enabling proactive intervention before a default occurs.
+
+---
+
+## Ethical Considerations & Limitations
+
+**Legal (EU explainability):** GDPR and EU financial regulations require that automated decisions affecting borrowers be explainable. Our model's reliance on tangible financial ratios (not black-box features) makes it more auditable than most ML credit models. Post-hoc tools (partial dependence plots, SHAP) provide the required transparency.
+
+**Bias by design:** The training data only includes firms with > €1.5M in assets. The model must not be used for small businesses or startups — it has no data to support those judgments. Geographic features (city, sector) were deliberately excluded to avoid penalising borrowers by location or industry.
+
+**Model drift:** Trained on 2000–2012 data. Performance should be monitored continuously; retraining annually with new data is recommended.
+
+**Scope — do not apply outside these boundaries:**
+
+| Boundary | Reason |
+|---|---|
+| Non-financial Italian corporations only | Financial/insurance balance sheets have different structure |
+| Firms > €1.5M in assets | Smaller firms not represented in training data |
+| 12-month horizon only | Model is not calibrated for other loan product horizons |
+| Italian economy only | Financial relationships are country-specific |
 
 ---
 
@@ -245,5 +304,17 @@ Do **not** apply to banks/insurers, small businesses, non-Italian firms, or othe
 - Altman, E.I. (1968). Financial ratios, discriminant analysis and the prediction of corporate bankruptcy. *Journal of Finance*, 23(4), 589–609.
 - Ohlson, J.A. (1980). Financial ratios and the probabilistic prediction of bankruptcy. *Journal of Accounting Research*, 18(1), 109–131.
 - Beaver, W.H. (1966). Financial ratios as predictors of failure. *Journal of Accounting Research*, 4, 71–111.
-- Morini & Ruiz (2010). *Active Credit Portfolio Management in Practice*. Wiley Finance.
+- Lessmann, S. et al. (2015). Benchmarking state-of-the-art classification algorithms for credit scoring. *European Journal of Operational Research*, 247(1), 124–136.
+- Morini & Ruiz (2010). *Active Credit Portfolio Management in Practice*. Wiley Finance. (Chapters 4 & 7: Calibration and Model Validation)
+- Edelberg, W. (2006). Risk-based pricing of interest rates in household loan markets. *Journal of Monetary Economics*, 53(8), 2283–2298.
 - IFRS 9: Financial Instruments (2014). International Accounting Standards Board.
+- Basel III: Finalising post-crisis reforms (2017). Bank for International Settlements.
+
+---
+
+## Contributors
+
+| Contributor | Responsibilities |
+|---|---|
+| **Mustafa Poonawala** | Problem formulation, EDA & data quality analysis, preprocessing pipeline, XGBoost architecture & hyperparameter tuning, walk-forward validation framework, `default_flag.py`, `estimator.py` (60%), `preprocessing.py` (50%) |
+| **Yash Jadhav** | Two-stage pipeline design, isotonic calibration, bootstrap CI methodology, evaluation & benchmarking, deployment & business case, `predictor.py` (100%), `harness.py` (70%), `estimator.py` (40%), `preprocessing.py` (50%) |
