@@ -1,0 +1,154 @@
+{
+  "model_version": "3.3_financials_strong_regex",
+  "feature_columns": [
+    "leverage_w",
+    "roa_w",
+    "cfroa_w",
+    "tangible_asset_ratio_w",
+    "debt_maturity_ratio_w",
+    "roic_operating_pct_w",
+    "altman_z",
+    "cf_to_debt_std",
+    "cash_to_assets_w",
+    "fin_debt_ratio_w",
+    "interest_coverage_w",
+    "ebitda_margin_w"
+  ],
+  "target_column": "default_12m",
+  "avail_column": "avail_date",
+  "avail_cutoff": "2012-05-01",
+  "calibration_months": 12,
+  "training": {
+    "n_obs": 651390,
+    "avail_years": [
+      2008,
+      2009,
+      2010,
+      2011
+    ],
+    "metrics": {
+      "n_samples": 651390,
+      "default_rate": 0.012989146287170513,
+      "auc": 0.8835231616645305,
+      "brier": 0.13716918385532884,
+      "bootstrap_ci": {
+        "mean_auc": 0.8834781236140384,
+        "std_auc": 0.00171012327837161,
+        "ci_lower": 0.8800491557529817,
+        "ci_upper": 0.8868386528600437,
+        "ci_width": 0.006789497107062004,
+        "confidence_level": 0.95,
+        "n_bootstrap": 2000
+      }
+    }
+  },
+  "calibration": {
+    "n_obs": 184347,
+    "avail_years": [
+      2012
+    ],
+    "metrics": {
+      "n_samples": 184347,
+      "default_rate": 0.01352883420939858,
+      "use_calibration": true,
+      "uncalibrated": {
+        "auc": 0.8499360164228632,
+        "brier": 0.13577790784619845,
+        "default_rate": 0.01352883420939858,
+        "bootstrap_ci": {
+          "mean_auc": 0.8497630471543843,
+          "std_auc": 0.003925196049144703,
+          "ci_lower": 0.8419511838985482,
+          "ci_upper": 0.8571228240808071,
+          "ci_width": 0.015171640182258916,
+          "confidence_level": 0.95,
+          "n_bootstrap": 1000
+        }
+      },
+      "calibration_summary": {
+        "auc_before": 0.8499360164228632,
+        "auc_after": 0.851533695331025,
+        "auc_change": 0.0015976789081617593,
+        "brier_before": 0.13577790784619845,
+        "brier_after": 0.011878065856259392,
+        "brier_improvement": 0.12389984198993906
+      },
+      "calibrated": {
+        "auc": 0.851533695331025,
+        "brier": 0.011878065856259392,
+        "default_rate": 0.01352883420939858,
+        "bootstrap_ci": {
+          "mean_auc": 0.8515750944199267,
+          "std_auc": 0.0037149895037515155,
+          "ci_lower": 0.8444668271894394,
+          "ci_upper": 0.8594277228355383,
+          "ci_width": 0.014960895646098815,
+          "confidence_level": 0.95,
+          "n_bootstrap": 1000
+        }
+      },
+      "improvements": {
+        "auc_change": 0.0015976789081617593,
+        "brier_improvement": 0.12389984198993906
+      }
+    }
+  },
+  "walk_forward": {
+    "mean_auc": 0.8364225920635137,
+    "std_auc": 0.009879859508434933,
+    "n_folds": 4,
+    "overall_ci": {
+      "mean_auc": 0.836513550138812,
+      "std_auc": 0.0020786807975446205,
+      "ci_lower": 0.832397167760501,
+      "ci_upper": 0.8404438478027026,
+      "ci_width": 0.00804668004220166,
+      "confidence_level": 0.95,
+      "n_bootstrap": 2000
+    }
+  },
+  "preprocessing_details": {
+    "leverage_p1": 0.0,
+    "leverage_p99": 98.36576012605708,
+    "roe_p1": -462.03360000000004,
+    "roe_p99": 303.2676000000001,
+    "roa_p1": -21.5,
+    "roa_p99": 31.08,
+    "cta_p1": 0.0,
+    "cta_p99": 49.996707733874096,
+    "at_p1": 0.0,
+    "at_p99": 3.748097750201285,
+    "ic_p1": -414.63574775353015,
+    "ic_p99": 6166.3924950374,
+    "em_p1": -1023.7759849405517,
+    "em_p99": 92.41843789551683,
+    "wcr_p1": -81.25560610237926,
+    "wcr_p99": 96.77285764420387,
+    "cfroa_p1": -19.141428489184676,
+    "cfroa_p99": 28.091157712223293,
+    "art_p1": 0.0,
+    "art_p99": 88.68653861890189,
+    "fdr_p1": 0.5436052106129329,
+    "fdr_p99": 100.30231725464729,
+    "tang_p1": 0.0,
+    "tang_p99": 98.80726204678011,
+    "dm_p1": 0.0,
+    "dm_p99": 99.55256486982199,
+    "la_p1": 14.234315625177313,
+    "la_p99": 18.4479519285673,
+    "qr_p1": 0.0019546794272547606,
+    "qr_p99": 76.17333251265897,
+    "roic_p1": -37.53873510417829,
+    "roic_p99": 43.664812435571356,
+    "z_p1": -1.656974123044668,
+    "z_p99": 5.251550336157452,
+    "cf_to_debt_lower": -0.40778860465469996,
+    "cf_to_debt_upper": 2.4370398159023763,
+    "cf_to_debt_mean": 0.11089679192266064,
+    "cf_to_debt_se": 0.3309419177178365
+  },
+  "model_type": "xgboost.XGBClassifier",
+  "calibration_used": true,
+  "data_leakage_prevented": true,
+  "calibration_method": "temporal_holdout"
+}

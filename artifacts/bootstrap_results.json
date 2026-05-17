@@ -1,0 +1,40 @@
+{
+  "training_set": {
+    "mean_auc": 0.8834781236140384,
+    "std_auc": 0.00171012327837161,
+    "ci_lower": 0.8800491557529817,
+    "ci_upper": 0.8868386528600437,
+    "ci_width": 0.006789497107062004,
+    "confidence_level": 0.95,
+    "n_bootstrap": 2000
+  },
+  "calibration_set": {
+    "uncalibrated": {
+      "mean_auc": 0.8497630471543843,
+      "std_auc": 0.003925196049144703,
+      "ci_lower": 0.8419511838985482,
+      "ci_upper": 0.8571228240808071,
+      "ci_width": 0.015171640182258916,
+      "confidence_level": 0.95,
+      "n_bootstrap": 1000
+    },
+    "calibrated": {
+      "mean_auc": 0.8515750944199267,
+      "std_auc": 0.0037149895037515155,
+      "ci_lower": 0.8444668271894394,
+      "ci_upper": 0.8594277228355383,
+      "ci_width": 0.014960895646098815,
+      "confidence_level": 0.95,
+      "n_bootstrap": 1000
+    }
+  },
+  "walk_forward": {
+    "mean_auc": 0.836513550138812,
+    "std_auc": 0.0020786807975446205,
+    "ci_lower": 0.832397167760501,
+    "ci_upper": 0.8404438478027026,
+    "ci_width": 0.00804668004220166,
+    "confidence_level": 0.95,
+    "n_bootstrap": 2000
+  }
+}

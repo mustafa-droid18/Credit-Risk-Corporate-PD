@@ -1,0 +1,10 @@
+## requirements.txt 
+pandas
+numpy
+xgboost
+scikit-learn
+joblib
+statsmodels
+matplotlib
+
+# Optional, for hyperparameter tuning
