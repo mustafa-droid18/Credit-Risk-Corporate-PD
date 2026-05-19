@@ -19,6 +19,7 @@ env/
 data/
 *.csv
 !artifacts/walk_forward_results.csv
+!predictions.csv
 
 # OS
 .DS_Store
